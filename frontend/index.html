@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎯 Guess The Number</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --border: #00ffcc;
+      --accent: #ff00aa;
+      --yellow: #ffe600;
+      --text: #e0e0ff;
+      --dim: #555577;
+      --glow: 0 0 10px #00ffcc88, 0 0 30px #00ffcc33;
+      --glow-pink: 0 0 10px #ff00aa88, 0 0 30px #ff00aa33;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.15) 2px,
+        rgba(0,0,0,0.15) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle var(--dur) infinite;
+      opacity: 0;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 0.8; }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    header { text-align: center; margin-bottom: 50px; }
+
+    .title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      color: var(--border);
+      text-shadow: var(--glow);
+      letter-spacing: 2px;
+      animation: flicker 4s infinite;
+    }
+
+    @keyframes flicker {
+      0%, 95%, 100% { opacity: 1; }
+      96% { opacity: 0.4; }
+      97% { opacity: 1; }
+      98% { opacity: 0.3; }
+      99% { opacity: 1; }
+    }
+
+    .subtitle { margin-top: 16px; color: var(--dim); font-size: 1.3rem; letter-spacing: 3px; }
+
+    .blink { animation: blink 1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      box-shadow: var(--glow);
+      padding: 36px;
+      margin-bottom: 36px;
+      position: relative;
+    }
+
+    .card::before {
+      content: attr(data-label);
+      position: absolute;
+      top: -14px;
+      left: 20px;
+      background: var(--bg);
+      padding: 0 10px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.55rem;
+      color: var(--border);
+      letter-spacing: 2px;
+    }
+
+    label { display: block; color: var(--border); font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 8px; }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      background: #050508;
+      border: 1px solid var(--dim);
+      border-bottom: 2px solid var(--border);
+      color: var(--yellow);
+      font-family: 'VT323', monospace;
+      font-size: 1.6rem;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 24px;
+    }
+
+    input:focus { border-color: var(--border); box-shadow: var(--glow); }
+
+    button {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      padding: 16px 32px;
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: var(--glow-pink);
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    button:hover { background: var(--accent); color: var(--bg); }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Result panel */
+    #result-panel { display: none; text-align: center; }
+
+    .result-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(0.9rem, 3vw, 1.4rem);
+      color: var(--yellow);
+      text-shadow: 0 0 10px var(--yellow);
+      margin-bottom: 20px;
+      word-break: break-word;
+    }
+
+    .result-distance { font-size: 3rem; color: var(--border); text-shadow: var(--glow); margin-bottom: 8px; }
+    .result-label { color: var(--dim); font-size: 1.1rem; letter-spacing: 3px; margin-bottom: 24px; }
+
+    .percentile-bar-wrap {
+      background: #050508;
+      border: 1px solid var(--dim);
+      height: 24px;
+      margin-bottom: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .percentile-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--border));
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .percentile-text { color: var(--yellow); font-size: 1.4rem; letter-spacing: 2px; }
+
+    .error-msg {
+      color: var(--accent);
+      text-align: center;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      padding: 12px;
+      border: 1px solid var(--accent);
+      display: none;
+      margin-top: 12px;
+    }
+
+    /* Leaderboard */
+    .lb-header {
+      display: grid;
+      grid-template-columns: 50px 1fr 100px;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--border);
+      color: var(--bg);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.5rem;
+      letter-spacing: 1px;
+    }
+
+    .lb-row {
+      display: grid;
+      grid-template-columns: 50px 1fr 100px;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a1a2e;
+      transition: background 0.15s;
+      font-size: 1.1rem;
+    }
+
+    .lb-row:hover { background: #1a1a2e; }
+    .lb-row.gold { color: #ffd700; }
+    .lb-row.silver { color: #c0c0c0; }
+    .lb-row.bronze { color: #cd7f32; }
+    .lb-row.highlight { background: #1a0a1a; border-left: 3px solid var(--accent); }
+
+    .lb-rank { color: var(--dim); text-align: center; }
+    .lb-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-dist { color: var(--border); text-align: right; }
+
+    .lb-empty { text-align: center; color: var(--dim); padding: 40px; letter-spacing: 3px; }
+
+    .refresh-btn {
+      margin-top: 16px;
+      border-color: var(--border);
+      color: var(--border);
+      box-shadow: var(--glow);
+      font-size: 0.55rem;
+      padding: 12px;
+    }
+
+    .refresh-btn:hover { background: var(--border); color: var(--bg); }
+
+    .delete-btn {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: var(--glow-pink);
+      font-size: 0.55rem;
+      padding: 12px;
+      margin-top: 0;
+    }
+
+    .delete-btn:hover { background: var(--accent); color: var(--bg); }
+
+    /* My Guess card */
+    .my-guess-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .my-guess-stat-label { color: var(--dim); font-size: 0.9rem; letter-spacing: 2px; margin-bottom: 4px; }
+    .my-guess-stat-value { color: var(--yellow); font-size: 2rem; }
+
+    /* Search */
+    .search-result {
+      text-align: center;
+      color: var(--yellow);
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .search-error {
+      text-align: center;
+      color: var(--accent);
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid var(--accent);
+      display: none;
+    }
+
+    @media (max-width: 500px) {
+      .lb-header, .lb-row { grid-template-columns: 40px 1fr 70px; font-size: 0.9rem; }
+      .my-guess-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <header>
+    <div class="title">🎯 GUESS THE NUMBER</div>
+    <div class="subtitle">CAN YOU FIND IT? <span class="blink">_</span></div>
+  </header>
+
+  <!-- Guess Form -->
+  <div class="card" data-label="// ENTER YOUR GUESS //" id="form-card">
+    <label for="nameInput">YOUR NAME</label>
+    <input type="text" id="nameInput" placeholder="PLAYER ONE" maxlength="50" autocomplete="off"/>
+    <label for="guessInput">YOUR GUESS (1 - 1000)</label>
+    <input type="number" id="guessInput" placeholder="???" min="1" max="1000"/>
+    <button id="submitBtn" onclick="submitGuess()">[ SUBMIT GUESS ]</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- Result after submitting -->
+  <div class="card" data-label="// RESULT //" id="result-panel">
+    <div class="result-name" id="resultName"></div>
+    <div class="result-distance" id="resultDistance"></div>
+    <div class="result-label">AWAY FROM THE TARGET</div>
+    <div style="margin-bottom:8px; color: var(--dim); letter-spacing:2px; font-size:1rem;">BETTER THAN</div>
+    <div class="percentile-bar-wrap">
+      <div class="percentile-bar" id="percentileBar"></div>
+    </div>
+    <div class="percentile-text" id="percentileText"></div>
+    <div style="margin-top:8px; color:var(--dim); font-size:0.95rem; letter-spacing:2px;">OF ALL PLAYERS</div>
+  </div>
+
+  <!-- My Existing Guess (shown if IP already has a guess) -->
+  <div class="card" data-label="// YOUR EXISTING GUESS //" id="my-guess-card" style="display:none">
+    <div class="my-guess-grid">
+      <div>
+        <div class="my-guess-stat-label">NAME</div>
+        <div class="my-guess-stat-value" id="my-name" style="font-size:1.3rem;"></div>
+      </div>
+      <div>
+        <div class="my-guess-stat-label">GUESS</div>
+        <div class="my-guess-stat-value" id="my-guess-val"></div>
+      </div>
+      <div>
+        <div class="my-guess-stat-label">DISTANCE</div>
+        <div class="my-guess-stat-value" id="my-distance"></div>
+      </div>
+    </div>
+    <button class="delete-btn" onclick="deleteGuess()">[ 🗑 DELETE MY GUESS ]</button>
+    <div class="error-msg" id="deleteMsg" style="display:none;"></div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="card" data-label="// TOP 20 LEADERBOARD //">
+    <div class="lb-header">
+      <div>#</div>
+      <div>NAME</div>
+      <div style="text-align:right">DISTANCE</div>
+    </div>
+    <div id="leaderboard-body">
+      <div class="lb-empty">LOADING...</div>
+    </div>
+    <button class="refresh-btn" onclick="loadLeaderboard()">[ REFRESH ]</button>
+  </div>
+
+  <!-- Search by Name -->
+  <div class="card" data-label="// SEARCH PLAYER //">
+    <label for="searchInput">SEARCH BY NAME</label>
+    <input type="text" id="searchInput" placeholder="PLAYER NAME" maxlength="50" autocomplete="off"/>
+    <button class="refresh-btn" onclick="searchPlayer()">[ SEARCH ]</button>
+    <div class="search-result" id="searchResult"></div>
+    <div class="search-error" id="searchError"></div>
+  </div>
+
+</div>
+
+<script>
+  // Stars
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.setProperty('--dur', (2 + Math.random() * 4) + 's');
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    starsEl.appendChild(s);
+  }
+
+  // ── Submit Guess ──────────────────────────────────────────
+  async function submitGuess() {
+    const name = document.getElementById('nameInput').value.trim();
+    const guess = document.getElementById('guessInput').value;
+    const btn = document.getElementById('submitBtn');
+    const errEl = document.getElementById('errorMsg');
+
+    errEl.style.display = 'none';
+
+    if (!name || !guess) { showError('ENTER YOUR NAME AND GUESS!'); return; }
+
+    btn.disabled = true;
+    btn.textContent = '[ PROCESSING... ]';
+
+    try {
+      const res = await fetch('/api/guess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, guess: parseInt(guess) })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.error || 'SOMETHING WENT WRONG');
+        btn.disabled = false;
+        btn.textContent = '[ SUBMIT GUESS ]';
+        return;
+      }
+
+      showResult(data);
+      loadLeaderboard();
+      checkMyGuess();
+
+    } catch (e) {
+      showError('CONNECTION ERROR. TRY AGAIN.');
+      btn.disabled = false;
+      btn.textContent = '[ SUBMIT GUESS ]';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = '⚠ ' + msg;
+    el.style.display = 'block';
+  }
+
+  function showResult(data) {
+    document.getElementById('form-card').style.display = 'none';
+    const panel = document.getElementById('result-panel');
+    panel.style.display = 'block';
+    document.getElementById('resultName').textContent = '👾 ' + data.name.toUpperCase();
+    document.getElementById('resultDistance').textContent = data.distance;
+    document.getElementById('percentileText').textContent = data.percentile + '%';
+    setTimeout(() => {
+      document.getElementById('percentileBar').style.width = data.percentile + '%';
+    }, 100);
+  }
+
+  // ── Check My Guess (by IP) ────────────────────────────────
+  async function checkMyGuess() {
+    try {
+      const res = await fetch('/api/guess/me');
+      const data = await res.json();
+      const card = document.getElementById('my-guess-card');
+
+      if (data.exists) {
+        document.getElementById('my-name').textContent = data.name.toUpperCase();
+        document.getElementById('my-guess-val').textContent = data.guess;
+        document.getElementById('my-distance').textContent = data.distance;
+        card.style.display = 'block';
+        // Hide the submit form — they already guessed
+        document.getElementById('form-card').style.display = 'none';
+      } else {
+        card.style.display = 'none';
+        // Show submit form only if result panel is also hidden
+        if (document.getElementById('result-panel').style.display === 'none') {
+          document.getElementById('form-card').style.display = 'block';
+        }
+      }
+    } catch(e) {
+      // silently fail — don't block the page
+    }
+  }
+
+  // ── Delete Guess ──────────────────────────────────────────
+  async function deleteGuess() {
+    const msgEl = document.getElementById('deleteMsg');
+    msgEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/guess', { method: 'DELETE' });
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById('my-guess-card').style.display = 'none';
+        document.getElementById('result-panel').style.display = 'none';
+        document.getElementById('form-card').style.display = 'block';
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').textContent = '[ SUBMIT GUESS ]';
+        document.getElementById('nameInput').value = '';
+        document.getElementById('guessInput').value = '';
+        loadLeaderboard();
+      } else {
+        msgEl.textContent = '⚠ ' + (data.error || 'COULD NOT DELETE');
+        msgEl.style.display = 'block';
+      }
+    } catch(e) {
+      const msgEl = document.getElementById('deleteMsg');
+      msgEl.textContent = '⚠ CONNECTION ERROR';
+      msgEl.style.display = 'block';
+    }
+  }
+
+  // ── Leaderboard ───────────────────────────────────────────
+  async function loadLeaderboard() {
+    const body = document.getElementById('leaderboard-body');
+    try {
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+
+      if (!data.length) {
+        body.innerHTML = '<div class="lb-empty">NO GUESSES YET. BE THE FIRST!</div>';
+        return;
+      }
+
+      const rankSymbol = ['🥇', '🥈', '🥉'];
+      const rankClass = ['gold', 'silver', 'bronze'];
+      const myName = document.getElementById('my-name').textContent.toLowerCase();
+
+      body.innerHTML = data.map(row => {
+        const isMe = row.name.toLowerCase() === myName;
+        return `
+          <div class="lb-row ${rankClass[row.rank - 1] || ''} ${isMe ? 'highlight' : ''}">
+            <div class="lb-rank">${rankSymbol[row.rank - 1] || row.rank}</div>
+            <div class="lb-name">${escapeHtml(row.name)}${isMe ? ' 👈' : ''}</div>
+            <div class="lb-dist">${row.distance}</div>
+          </div>
+        `;
+      }).join('');
+    } catch(e) {
+      body.innerHTML = '<div class="lb-empty">FAILED TO LOAD. REFRESH TO TRY AGAIN.</div>';
+    }
+  }
+
+  // ── Search Player ─────────────────────────────────────────
+  async function searchPlayer() {
+    const name = document.getElementById('searchInput').value.trim();
+    const resultEl = document.getElementById('searchResult');
+    const errorEl = document.getElementById('searchError');
+
+    resultEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    if (!name) {
+      errorEl.textContent = '⚠ ENTER A NAME TO SEARCH';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/guess/' + encodeURIComponent(name));
+      const data = await res.json();
+
+      if (res.status === 404) {
+        errorEl.textContent = '⚠ PLAYER NOT FOUND';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (!res.ok) {
+        errorEl.textContent = '⚠ SERVER ERROR. TRY AGAIN.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      resultEl.innerHTML = `
+        👾 ${escapeHtml(data.name.toUpperCase())}<br>
+        GUESS: ${data.guess} &nbsp;|&nbsp; DISTANCE: ${data.distance}<br>
+        <span style="color:var(--dim); font-size:1rem;">${data.created_at}</span>
+      `;
+      resultEl.style.display = 'block';
+    } catch(e) {
+      errorEl.textContent = '⚠ CONNECTION ERROR';
+      errorEl.style.display = 'block';
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Enter key — only triggers submit if form is visible
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (document.activeElement === document.getElementById('searchInput')) {
+        searchPlayer();
+      } else {
+        submitGuess();
+      }
+    }
+  });
+
+  loadLeaderboard();
+  checkMyGuess();
+</script>
+</body>
+</html>
