@@ -33,7 +33,7 @@ jobs:
       - name: Run unit tests
         run: |
           cd backend
-          pytest tests/ -v
+          PYTHONPATH=. pytest tests/ -v
       
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
