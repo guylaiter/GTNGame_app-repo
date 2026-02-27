@@ -1,6 +1,8 @@
 # 🎯 Guess The Number — Docker 3-Tier App
 
-A fun number guessing game built with Flask, PostgreSQL, and Nginx.
+A number guessing game where players try to guess a secret number between 1-1000.
+Each guess is ranked by distance from the secret number and shown on a leaderboard.
+Built with Flask, PostgreSQL, and Nginx.
 
 ## Architecture
 
@@ -11,6 +13,9 @@ A fun number guessing game built with Flask, PostgreSQL, and Nginx.
 - **Tier 1 (Frontend):** Nginx serving static HTML/CSS/JS
 - **Tier 2 (Backend):** Flask REST API
 - **Tier 3 (Database):** PostgreSQL
+
+## Architecture Diagram
+![Architecture](App-Architecture.png)
 
 ### Networks
 - `backend_network` — db + backend (backend talks to db)
