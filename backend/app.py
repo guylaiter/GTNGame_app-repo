@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 
@@ -21,7 +21,7 @@ class Guess(db.Model):
     ip_address = db.Column(db.String(50), nullable=False)
     guess = db.Column(db.Integer, nullable=False)
     distance = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 with app.app_context():
