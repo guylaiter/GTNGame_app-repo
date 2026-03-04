@@ -42,7 +42,7 @@ jobs:
         run: |
           echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
       
-      - name: Pull and start container with docker-compose
+      - name: Pull and start container with docker compose
         env:
           BACKEND_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}:${{ steps.get-tag.outputs.IMAGE_TAG }}
           POSTGRES_USER: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_POSTGRES_USER || 'testuser' }}
@@ -53,6 +53,16 @@ jobs:
         run: |
           docker pull $BACKEND_IMAGE
           docker compose up -d
+
+      - name: Show container logs for debugging
+        if: always()
+        run: |
+          echo "=== Backend logs ==="
+          docker compose logs backend
+          echo "=== DB logs ==="
+          docker compose logs db
+          echo "=== Container status ==="
+          docker compose ps
           
       
       - name: Wait for application
