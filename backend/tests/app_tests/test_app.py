@@ -25,7 +25,7 @@ def client():
 # ── GET /health ────────────────────────────────────────────────────────────────
 
 def test_health(client):
-    res = client.get("/health")
+    res = client.get("/api/health")
     assert res.status_code == 200
     assert res.get_json() == {"status": "ok"}
 
@@ -123,3 +123,4 @@ def test_delete_guess_success(client):
 def test_delete_guess_not_found(client):
     res = client.delete("/api/guess")
     assert res.status_code == 404
+
