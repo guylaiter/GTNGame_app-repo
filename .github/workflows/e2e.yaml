@@ -52,14 +52,14 @@ jobs:
           SECRET_NUMBER: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_SECRET_NUMBER || '42' }}
         run: |
           docker pull $BACKEND_IMAGE
-          docker-compose up -d
+          docker compose up -d
           
       
       - name: Wait for application
         run: |
           timeout 15 sh -c 'until curl -f http://localhost/api/health 2>/dev/null; do sleep 1; done' || {
             echo "❌ Application failed to start"
-            docker-compose logs
+            docker compose logs
             exit 1
           }
           echo "✅ Application is ready"
