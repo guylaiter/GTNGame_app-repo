@@ -67,7 +67,7 @@ jobs:
       - name: Run E2E tests
         run: |
           cd backend
-          pytest tests/e2e/ -v --tb=short
+          pytest tests/e2e_tests/ -v --tb=short
       
       - name: E2E Test Summary
         if: success()
