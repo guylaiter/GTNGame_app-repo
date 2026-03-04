@@ -41,6 +41,15 @@ jobs:
         id: get-tag
         run: |
           echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+
+      - name: Debug branch + condition
+        run: |
+          echo "head_branch = ${{ github.event.workflow_run.head_branch }}"
+          if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            echo "Condition evaluated to TRUE (using secrets)"
+          else
+            echo "Condition evaluated to FALSE (using fallback test values)"
+          fi
       
       - name: Pull and start container with docker compose
         env:
@@ -49,7 +58,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_POSTGRES_PASSWORD || 'testpass' }}
           POSTGRES_DB: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_POSTGRES_DB || 'testdb' }}
           DATABASE_URL: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_DATABASE_URL || 'postgresql://testuser:testpass@db:5432/testdb' }}
-          SECRET_NUMBER: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_SECRET_NUMBER || '42' }}
+          SECRET_NUMBER: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_SECRET_NUMBER || '33' }}
         run: |
           docker pull $BACKEND_IMAGE
       
