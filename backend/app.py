@@ -130,7 +130,7 @@ def delete_guess():
     db.session.commit()
     return jsonify({"message": f"Guess by '{guess.name}' deleted successfully"}), 200
 
-@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
 
