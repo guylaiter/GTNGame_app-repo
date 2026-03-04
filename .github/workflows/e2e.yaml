@@ -52,6 +52,7 @@ jobs:
           SECRET_NUMBER: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_SECRET_NUMBER || '42' }}
         run: |
           docker pull $BACKEND_IMAGE
+          export BACKEND_IMAGE POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL SECRET_NUMBER
           docker compose up -d
 
       - name: Show container logs for debugging
