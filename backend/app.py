@@ -54,7 +54,7 @@ def get_guess(name):
         "guess": guess.guess,
         "distance": guess.distance,
         "created_at": guess.created_at.strftime("%Y-%m-%d %H:%M")
-    })
+    }), 200
 
 @app.route("/api/guess", methods=["POST"])
 def submit_guess():
@@ -111,6 +111,7 @@ def leaderboard():
         results.append({
             "rank": i + 1,
             "name": g.name,
+            "guess": g.guess,
             "distance": g.distance,
             "created_at": g.created_at.strftime("%Y-%m-%d %H:%M")
         })

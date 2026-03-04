@@ -28,8 +28,8 @@ services:
     container_name: guess_backend
     restart: always
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SECRET_NUMBER: ${SECRET_NUMBER}       
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/guessdb}
+      SECRET_NUMBER: ${SECRET_NUMBER:-42}
     expose:
       - "5000"
     depends_on:
