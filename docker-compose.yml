@@ -23,12 +23,13 @@ services:
       - backend_network
 
   backend:
+    image: ${BACKEND_IMAGE:-guess-backend-local}
     build: ./backend
     container_name: guess_backend
     restart: always
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      SECRET_NUMBER: ${SECRET_NUMBER} # <-- Secret / .env =  your secret number!
+      SECRET_NUMBER: ${SECRET_NUMBER}       
     expose:
       - "5000"
     depends_on:
