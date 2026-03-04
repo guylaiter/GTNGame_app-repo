@@ -68,7 +68,7 @@ jobs:
           
           # Wait and retry with wget
           wget --retry-connrefused --waitretry=1 --tries=15 --timeout=2 \
-            -q http://localhost:5000/health -O /dev/null || {
+            -q http://localhost:5000/api/health -O /dev/null || {
             echo "❌ Health check failed"
             docker logs test-container
             exit 1
