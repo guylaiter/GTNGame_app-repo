@@ -2,14 +2,11 @@ name: CI
 
 on:
   push:
-    branches:
-      - dev
-      - staging
-      - main
+    branches: [main, dev, staging]
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
   build-and-test:
