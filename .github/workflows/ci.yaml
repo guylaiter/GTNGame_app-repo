@@ -44,20 +44,28 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-      
+
+      - name: Set ECR repository based on branch
+        run: |
+          case "${{ github.ref_name }}" in
+            dev)     echo "ECR_REPO=guess-the-number/dev"     >> $GITHUB_ENV ;;
+            staging) echo "ECR_REPO=guess-the-number/staging" >> $GITHUB_ENV ;;
+            main)    echo "ECR_REPO=guess-the-number/main"    >> $GITHUB_ENV ;;
+          esac
+
       - name: Build Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd backend
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          
+
       - name: Run integration tests
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           # Start container
@@ -65,7 +73,7 @@ jobs:
             -e SECRET_NUMBER=42 \
             -e DATABASE_URL=sqlite:///test.db \
             $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
+
           # Wait and retry with wget
           wget --retry-connrefused --waitretry=1 --tries=15 --timeout=2 \
             -q http://localhost:5000/api/health -O /dev/null || {
@@ -73,21 +81,21 @@ jobs:
             docker logs test-container
             exit 1
           }
-          
+
           echo "✅ Health check passed"
-      
+
       - name: Push image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-      
+
       - name: Output image details
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           echo "✅ CI Pipeline Completed Successfully!"
