@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 
@@ -21,7 +21,7 @@ class Guess(db.Model):
     ip_address = db.Column(db.String(50), nullable=False)
     guess = db.Column(db.Integer, nullable=False)
     distance = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 with app.app_context():
@@ -54,7 +54,7 @@ def get_guess(name):
         "guess": guess.guess,
         "distance": guess.distance,
         "created_at": guess.created_at.strftime("%Y-%m-%d %H:%M")
-    })
+    }), 200
 
 @app.route("/api/guess", methods=["POST"])
 def submit_guess():
@@ -111,6 +111,7 @@ def leaderboard():
         results.append({
             "rank": i + 1,
             "name": g.name,
+            "guess": g.guess,
             "distance": g.distance,
             "created_at": g.created_at.strftime("%Y-%m-%d %H:%M")
         })
@@ -130,7 +131,7 @@ def delete_guess():
     db.session.commit()
     return jsonify({"message": f"Guess by '{guess.name}' deleted successfully"}), 200
 
-@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
 
