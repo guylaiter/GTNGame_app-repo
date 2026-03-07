@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+      - staging
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.9'
+      
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run unit tests
+        run: |
+          cd backend
+          PYTHONPATH=. pytest tests/app_tests/ -v
+      
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set ECR repository based on branch
+        run: |
+          case "${{ github.ref_name }}" in
+            dev)     echo "ECR_REPO=guess-the-number/dev"     >> $GITHUB_ENV ;;
+            staging) echo "ECR_REPO=guess-the-number/staging" >> $GITHUB_ENV ;;
+            main)    echo "ECR_REPO=guess-the-number/main"    >> $GITHUB_ENV ;;
+          esac
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd backend
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+
+      - name: Run integration tests
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Start container
+          docker run -d -p 5000:5000 --name test-container \
+            -e SECRET_NUMBER=42 \
+            -e DATABASE_URL=sqlite:///test.db \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          # Wait and retry with wget
+          wget --retry-connrefused --waitretry=1 --tries=15 --timeout=2 \
+            -q http://localhost:5000/api/health -O /dev/null || {
+            echo "❌ Health check failed"
+            docker logs test-container
+            exit 1
+          }
+
+          echo "✅ Health check passed"
+
+      - name: Push image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Output image details
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "✅ CI Pipeline Completed Successfully!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
