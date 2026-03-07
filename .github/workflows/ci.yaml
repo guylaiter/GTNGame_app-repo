@@ -47,10 +47,11 @@ jobs:
 
       - name: Set ECR repository based on branch
         run: |
+          BASE_REPO="${{ secrets.AWS_ECR_REPOSITORY }}"
           case "${{ github.ref_name }}" in
-            dev)     echo "ECR_REPO=guess-the-number/dev"     >> $GITHUB_ENV ;;
-            staging) echo "ECR_REPO=guess-the-number/staging" >> $GITHUB_ENV ;;
-            main)    echo "ECR_REPO=guess-the-number/main"    >> $GITHUB_ENV ;;
+            dev)     echo "ECR_REPO=${BASE_REPO}dev"     >> $GITHUB_ENV ;;
+            staging) echo "ECR_REPO=${BASE_REPO}staging" >> $GITHUB_ENV ;;
+            main)    echo "ECR_REPO=${BASE_REPO}main"    >> $GITHUB_ENV ;;
           esac
 
       - name: Build Docker image
