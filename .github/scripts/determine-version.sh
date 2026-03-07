@@ -2,7 +2,7 @@
 set -e
 
 # Configuration - Keywords for version bumping
-MAJOR_KEYWORDS="BREAKING CHANGE|BREAKING|^feat!:|^fix!:|Incompatible API"
+MAJOR_KEYWORDS="BREAKING CHANGE|BREAKING|!:"
 MINOR_KEYWORDS="^feat:|^feature:"
 PATCH_KEYWORDS="^fix:|^chore:|^docs:|^style:|^refactor:|^perf:|^test:|^ci:|^build:"
 
