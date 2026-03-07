@@ -37,6 +37,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
       
+      - name: Set ECR repository based on branch
+        run: |
+          case "${{ github.event.workflow_run.head_branch }}" in
+            dev)     echo "ECR_REPO=guess-the-number/dev"     >> $GITHUB_ENV ;;
+            staging) echo "ECR_REPO=guess-the-number/staging" >> $GITHUB_ENV ;;
+            main)    echo "ECR_REPO=guess-the-number/main"    >> $GITHUB_ENV ;;
+          esac
+
       - name: Get image tag from CI workflow
         id: get-tag
         run: |
@@ -53,7 +61,7 @@ jobs:
       
       - name: Pull and start container with docker compose
         env:
-          BACKEND_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}:${{ steps.get-tag.outputs.IMAGE_TAG }}
+          BACKEND_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ steps.get-tag.outputs.IMAGE_TAG }}
           POSTGRES_USER: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_POSTGRES_USER || 'testuser' }}
           POSTGRES_PASSWORD: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_POSTGRES_PASSWORD || 'testpass' }}
           POSTGRES_DB: ${{ github.event.workflow_run.head_branch == 'main' && secrets.E2E_POSTGRES_DB || 'testdb' }}
