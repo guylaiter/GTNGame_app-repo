@@ -18,6 +18,17 @@ echo "Commit Message: $COMMIT_MSG"
 # Determine tag based on branch
 if [ "$BRANCH_NAME" == "main" ]; then
   echo "Main branch detected - using semantic versioning"
+
+    # Check if THIS commit already has a tag
+  EXISTING_TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+  
+  if [ -n "$EXISTING_TAG" ]; then
+    echo "This commit already has tag: $EXISTING_TAG"
+    IMAGE_TAG="$EXISTING_TAG"
+    echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+    echo "Final IMAGE_TAG: $IMAGE_TAG"
+    exit 0  # ← Skip version calculation
+  fi
   
   # Fetch all tags
   git fetch --tags --unshallow 2>/dev/null || git fetch --tags
