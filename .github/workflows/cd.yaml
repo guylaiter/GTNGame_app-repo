@@ -1,0 +1,54 @@
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (e.g. v1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Clone cluster repo
+        run: |
+          git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository_owner }}/FinalProject_cluster-repo.git
+          cd FinalProject_cluster-repo
+          git config user.name "cluster-repo-updater[bot]"
+          git config user.email "cluster-repo-updater[bot]@users.noreply.github.com"
+
+      - name: Update image tag in values.yaml
+        run: |
+          cd FinalProject_cluster-repo
+          sed -i "s/^  tag: .*/  tag: ${{ github.event.inputs.image_tag }}  # Updated by CD pipeline/" helm/values.yaml
+          echo "✅ Updated image tag to ${{ github.event.inputs.image_tag }}"
+
+      - name: Commit and push
+        run: |
+          cd FinalProject_cluster-repo
+          git add helm/values.yaml
+          git diff --cached --quiet && echo "⚠️ No changes to commit" && exit 0
+          git commit -m "deploy: update image tag to ${{ github.event.inputs.image_tag }}"
+          git push
+
+      - name: Summary
+        run: |
+          echo "✅ CD Pipeline Completed!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Image tag deployed: ${{ github.event.inputs.image_tag }}"
+          echo "ArgoCD will sync the cluster automatically"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
