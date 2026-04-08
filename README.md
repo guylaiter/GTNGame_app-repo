@@ -8,14 +8,14 @@ Built with Flask, PostgreSQL, and Nginx.
 ![Application Architecture](App-Architecture.png)
 
 ## How This Fits in the Project
-
+ 
 This is **one of three repositories** that make up the complete infrastructure:
-
+ 
 | Repository | Purpose | Technology |
 |------------|---------|------------|
-| **[FinalProject_infrastructure-repo](https://github.com/guylaiter/FinalProject_infrastructure-repo)** | AWS infrastructure provisioning | Terraform, EKS, VPC, ArgoCD |
-| **[FinalProject_app-repo](https://github.com/guylaiter/FinalProject_app-repo)** ← You are here | Application source code & CI/CD | Flask, PostgreSQL, GitHub Actions |
-| **[FinalProject_cluster-repo](https://github.com/guylaiter/FinalProject_cluster-repo)** | Kubernetes manifests & GitOps | Helm, ArgoCD, K8s |
+| **[GTNGame_infra-repo](https://github.com/guylaiter/GTNGame_infra-repo)** | AWS infrastructure provisioning | Terraform, EKS, VPC, ArgoCD |
+| **[GTNGame_app-repo](https://github.com/guylaiter/GTNGame_app-repo)** ← You are here | Application source code & CI/CD | Flask, PostgreSQL, GitHub Actions |
+| **[GTNGame_cluster-repo](https://github.com/guylaiter/GTNGame_cluster-repo)** | Kubernetes manifests & GitOps | Helm, ArgoCD, K8s |
 
 ## Overview
 
@@ -221,32 +221,15 @@ Deletes the guess associated with the requester's IP address.
 ```
 
 ## CI/CD Pipeline
-
+ 
 ### Workflow
-```
-Developer pushes code
-       ↓
-GitHub Actions triggers
-       ↓
-Run unit tests (pytest)
-       ↓
-Build Docker image
-       ↓
-Run integration tests
-       ↓
-Determine version tag (semantic versioning)
-       ↓
-Push to ECR: <repo>:<version>
-       ↓
-[Future] Update cluster-repo with new tag
-       ↓
-ArgoCD deploys automatically
-```
+ 
+![CI/CD Architecture](CI/CD-Architecture.png)
 
 ### Branch Strategy
-- **main:** Production deployments → `final-project-app-repomain`
-- **staging:** Staging deployments → `final-project-app-repostaging`
-- **dev:** Development deployments → `final-project-app-repodev`
+- **main:** Production deployments → `GTNGame_app-repomain`
+- **staging:** Staging deployments → `GTNGame_app-repostaging`
+- **dev:** Development deployments → `GTNGame_app-repodev`
 
 ### Versioning
 Automatic semantic versioning based on commit messages:
@@ -278,12 +261,8 @@ curl http://localhost/api/health
 ```
 
 ## Related Documentation
-
-- **Infrastructure Setup:** See [FinalProject_infrastructure-repo](https://github.com/guylaiter/FinalProject_infrastructure-repo)
-- **Kubernetes Deployment:** See [FinalProject_cluster-repo](https://github.com/guylaiter/FinalProject_cluster-repo)
+ 
+- **Infrastructure Setup:** See [GTNGame_infra-repo](https://github.com/guylaiter/GTNGame_infra-repo)
+- **Kubernetes Deployment:** See [GTNGame_cluster-repo](https://github.com/guylaiter/GTNGame_cluster-repo)
 - **Flask Documentation:** https://flask.palletsprojects.com/
 - **PostgreSQL Documentation:** https://www.postgresql.org/docs/
-
-## License
-
-This project is part of a final course project.
