@@ -224,7 +224,7 @@ Deletes the guess associated with the requester's IP address.
  
 ### Workflow
  
-![CI/CD Architecture](CI/CD-Architecture.png)
+![CI/CD Architecture](CICD-Architecture.png)
  
 ### Branch Strategy
 - **main:** Production deployments → `GTNGame_app-repomain`
